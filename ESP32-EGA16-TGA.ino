@@ -32,6 +32,12 @@
 #define STORE_TGA 1		/* store image output as TGA files */
 #define FORCE_8BPP_TGA 1	/* ImageMagick requires at least 8bpp for TGA, not our optimal 4bpp */
 
+#define STORE_DITHER_NONE 0
+#define STORE_DITHER_AVERAGE 0
+#define STORE_DITHER_ERROR 0
+#define STORE_DITHER_ORDERED 0
+#define STORE_DITHER_ORDERED_SHIFTED 1
+
 #define WIDTH 320
 #define HEIGHT 200
 #define SENSOR_HEIGHT 240
@@ -336,24 +342,34 @@ void takePictureToSD() {
 #endif
 
   ditherRGB565toRGB(fb->buf, rgb, NULL, WIDTH, HEIGHT, DITHER_NONE);
-  if (storeBufferToSD(pictureNumber, "rgb", rgb, RGB_SIZE) == 0) {
-    EEPROM.write(0, pictureNumber);
-    EEPROM.commit();
-  }
+#if STORE_RGB & STORE_DITHER_NONE
+  storeBufferToSD(pictureNumber, "rgb", rgb, RGB_SIZE);
+#endif
 
+#if STORE_DITHER_AVERAGE
   ditherRGB565toRGB(fb->buf, rgb, packed, WIDTH, HEIGHT, DITHER_AVERAGE);
   storeBuffers(pictureNumber, "avg", rgb, tga);
+#endif
 
+#if STORE_DITHER_ERROR
   ditherRGB565toRGB(fb->buf, rgb, packed, WIDTH, HEIGHT, DITHER_ERROR_PROP);
   storeBuffers(pictureNumber, "err", rgb, tga);
+#endif
 
+#if STORE_DITHER_ORDERED
   ditherRGB565toRGB(fb->buf, rgb, packed, WIDTH, HEIGHT, DITHER_ORDERED);
   storeBuffers(pictureNumber, "org", rgb, tga);
+#endif
 
+#if STORE_DITHER_ORDERED_SHIFTED
   ditherRGB565toRGB(fb->buf, rgb, packed, WIDTH, HEIGHT, DITHER_ORDERED_SHIFTED);
   storeBuffers(pictureNumber, "xyz", rgb, tga);
+#endif
 
   esp_camera_fb_return(fb);
+
+  EEPROM.write(0, pictureNumber);
+  EEPROM.commit();
 }
 
 
