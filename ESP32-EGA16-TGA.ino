@@ -10,6 +10,8 @@
   || of this software and associated documentation files.
   || The above copyright notice and this permission notice shall be included in all
   || copies or substantial portions of the Software.
+
+  Includes Bayer pattern code from https://stackoverflow.com/a/68210469/539443
 *********/
 
 #include "esp_camera.h"
