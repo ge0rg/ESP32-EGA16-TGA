@@ -17,6 +17,23 @@ There is a bunch of `#define`s in the source to enable or disable various "featu
 - `WARMUP_PICS` - number of pictures to discard while AWB is calibrating
 - `STORE_{RAW,RGB,TGA}` - which file formats you want to end up on the SD card
 - `STORE_DITHER_*` - which dither modes you want to store (see blog post)
-- `HEIGHT` - you can set that to 240 to keep the 1:1 pixel aspect ratio
+- `HEIGHT` - you can set that to 240 to keep the 1:1 pixel aspect ratio. In theory, other resolutions might be possible if they match the `pixel_format` value.
+- `FORCE_8BPP_TGA` - disable this to store a more compact but not supported by any modern viewer 4bpp packed TGA file
 
 **DO NOT TOUCH THE OTHER KNOBS!**
+
+## Postprocessing for modern displays
+
+To correct the non-square pixel aspect ratio and to better see the original
+pixels, it's recommended to upscale the image to 400%\*480%, e.g. by using
+the following `Makefile` on the SD card:
+
+```make
+TGA=$(patsubst %.tga, %.png, $(sort $(wildcard *.tga)))
+
+all: $(TGA)
+
+%.png: %.tga
+	convert $< -scale 400%x480% $@
+```
+
