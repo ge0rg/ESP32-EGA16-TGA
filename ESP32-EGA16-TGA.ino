@@ -285,7 +285,7 @@ void ditherRGB565toRGB(uint8_t* src, uint8_t* rgb, uint8_t *packed, int width, i
 #else
       packed_pixel = (packed_pixel << 4) | match;
       if (x % 2 == 1) {
-	packed[o/2] = packed_pixel;
+	packed[((HEIGHT - y - 1)*WIDTH + x)/2] = packed_pixel;
 	packed_pixel = 0;
       }
 #endif // FORCE_8BPP_TGA
