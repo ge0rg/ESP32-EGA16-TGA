@@ -74,6 +74,26 @@
 #undef USE_BUTTON
 #define BUTTON_GPIO 0
 
+void printAndSleep(const char* error) {
+  pinMode(4, OUTPUT);
+  if (error != NULL) {
+    Serial.println(error);
+    int i;
+    for (i = 1; i <= 5; i++) {
+      digitalWrite(4, i % 2);
+      delay(250);
+    }
+  }
+  digitalWrite(4, LOW);
+  rtc_gpio_hold_en(GPIO_NUM_4);
+  Serial.println("Going to sleep now");
+  delay(100);
+  esp_deep_sleep_start();
+  Serial.println("This will never be printed");
+  while (1) {}
+}
+
+
 int pictureNumber = 0;
 
 enum DitherMode {
@@ -190,7 +210,7 @@ int storeBufferToSD(int pictureNumber, const char *ext, byte* data, int len) {
   
   File file = fs.open(path, FILE_WRITE);
   if(!file){
-    Serial.println("Failed to open file in writing mode");
+    printAndSleep("Failed to open file in writing mode");
     return -1;
   }
   else {
@@ -315,7 +335,7 @@ void takePictureToSD() {
   // Take Picture with Camera
   fb = esp_camera_fb_get();  
   if(!fb) {
-    Serial.println("Camera capture failed");
+    printAndSleep("Camera capture failed");
     return;
   }
   // initialize EEPROM with predefined size
@@ -427,13 +447,13 @@ void setup() {
 
   //Serial.println("Starting SD Card");
   if(!SD_MMC.begin()){
-    Serial.println("SD Card Mount Failed");
+    printAndSleep("SD Card Mount Failed");
     return;
   }
   
   uint8_t cardType = SD_MMC.cardType();
   if(cardType == CARD_NONE){
-    Serial.println("No SD Card attached");
+    printAndSleep("No SD Card attached");
     return;
   }
 
@@ -457,11 +477,8 @@ void setup() {
   pinMode(0, INPUT_PULLUP);
   Serial.println("Press shutter for fun...");
 #else
-  delay(2000);
-  Serial.println("Going to sleep now");
-  delay(2000);
-  esp_deep_sleep_start();
-  Serial.println("This will never be printed");
+  SD_MMC.end();
+  printAndSleep(NULL);
 #endif
 }
 
