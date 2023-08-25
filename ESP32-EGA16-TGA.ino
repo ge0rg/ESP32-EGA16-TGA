@@ -34,11 +34,16 @@
 #define STORE_TGA 1		/* store image output as TGA files */
 #define FORCE_8BPP_TGA 1	/* ImageMagick requires at least 8bpp for TGA, not our optimal 4bpp */
 
+#define STORE_CHINA_EXPORT 1	/* this will switch to monochome mode and override most settings */
 #define STORE_DITHER_NONE 0
 #define STORE_DITHER_AVERAGE 0
 #define STORE_DITHER_ERROR 0
 #define STORE_DITHER_ORDERED 0
 #define STORE_DITHER_ORDERED_SHIFTED 1
+
+#define CE_WIDTH 128
+#define CE_HEIGHT 112
+#define CE_COLORS 4
 
 #define WIDTH 320
 #define HEIGHT 200
@@ -122,6 +127,10 @@ byte EGA_PALETTE[COLORS][3] = {
 	/* 14	bright yellow	*/	{ 0xFF, 0xFF, 0x55 },
 	/* 15	bright white	*/	{ 0xFF, 0xFF, 0xFF }
 };
+
+#if STORE_CHINA_EXPORT
+#include <ce_data.h>
+#endif
 
 const   int BAYER_PATTERN_16X16[16][16] =   {   //  16x16 Bayer Dithering Matrix.  Color levels: 256
 		{     0, 191,  48, 239,  12, 203,  60, 251,   3, 194,  51, 242,  15, 206,  63, 254  }, 
@@ -234,6 +243,26 @@ int storeBuffers(int pictureNumber, const char *ext, byte *rgb, byte *tga) {
 #endif
   return ret;
 }
+
+#if STORE_CHINA_EXPORT
+void ditherRGB565toChinaExport(uint8_t* src, uint8_t *dst) {
+  for (int y = 0; y < CE_HEIGHT; y++) {
+    for (int x = 0; x < CE_WIDTH; x++) {
+      int scale_y = y*SENSOR_HEIGHT / CE_HEIGHT; /* CE image height is 47% of sensor image */
+      int scale_x = 20 + x*280 / CE_WIDTH; /* CE image width corresponds to 47% of 280px */
+      int i = scale_y*WIDTH + scale_x;
+      int r = (int)(src[i*2] >> 3) * 255 / 31;
+      int g = (int)(((src[i*2] & 0x7) << 3) | ((src[i*2 + 1] >> 5) & 0x07)) * 255 / 63;
+      int b = (int)(src[i*2 + 1] & 0x1f) * 255 / 31;
+      int mono = (r + b + 2*g)/4;
+      int t = BAYER_PATTERN_16X16[x % 16][y % 16] / 2;
+      mono = max(0, min(mono + t - 64, 255));
+      int offset = CE_DATA_OFFSET + (16 + CE_HEIGHT - y)*CE_DATA_WIDTH + (16 + x);
+      dst[offset] = (mono / 64) * 85;
+    }
+  }
+}
+#endif //STORE_CHINA_EXPORT
 
 void ditherRGB565toRGB(uint8_t* src, uint8_t* rgb, uint8_t *packed, int width, int height, int dither_mode) {
   int err_r = 0, err_g = 0, err_b = 0;
@@ -360,7 +389,14 @@ void takePictureToSD() {
   //unsigned char *fbd = (unsigned char*)fb->buf;
 
 #if STORE_RAW
-  storeBufferToSD(pictureNumber, "rgb565", fb->buf, 2*WIDTH*SENSOR_HEIGHT);
+  storeBufferToSD(pictureNumber, "rgb565", fb->buf, fb->len);
+#endif
+
+#if STORE_CHINA_EXPORT
+  byte *ce = (byte*)ps_malloc(CE_DATA_SIZE);
+  memcpy(ce, CE_DATA, CE_DATA_SIZE);
+  ditherRGB565toChinaExport(fb->buf, ce);
+  storeBufferToSD(pictureNumber, "ce.tga", ce, CE_DATA_SIZE);
 #endif
 
   ditherRGB565toRGB(fb->buf, rgb, NULL, WIDTH, HEIGHT, DITHER_NONE);
