@@ -37,3 +37,13 @@ all: $(TGA)
 	convert $< -scale 400%x480% $@
 ```
 
+## China Export Camera
+
+This "feature" emulates a Nintendo GameBoy Camera. It can be toggled with the
+`STORE_CHINA_EXPORT` flag.
+
+The RGB565 image taken will be downscaled to 128x112 (GBC output resolution),
+dithered to 4 greyscale colors, and put into the middle of a 160x144 image file.
+
+For that, you need to generate `ce_data.h` by running `python3 gen_ce_h.py` - this
+script will expect a 160x144 PNG image under "china-export.png".
