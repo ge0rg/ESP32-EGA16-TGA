@@ -257,7 +257,7 @@ void ditherRGB565toChinaExport(uint8_t* src, uint8_t *dst) {
       int mono = (r + b + 2*g)/4;
       int t = BAYER_PATTERN_16X16[x % 16][y % 16] / 2;
       mono = max(0, min(mono + t - 64, 255));
-      int offset = CE_DATA_OFFSET + (16 + CE_HEIGHT - y)*CE_DATA_WIDTH + (16 + x);
+      int offset = CE_DATA_OFFSET + (15 + CE_HEIGHT - y)*CE_DATA_WIDTH + (16 + x);
       dst[offset] = (mono / 64) * 85;
     }
   }
