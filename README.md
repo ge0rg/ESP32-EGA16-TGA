@@ -39,6 +39,8 @@ all: $(TGA)
 
 ## China Export Camera
 
+![Dithered monochrome picture of an old telephone](example-ce.png)
+
 This "feature" emulates a Nintendo GameBoy Camera. It can be toggled with the
 `STORE_CHINA_EXPORT` flag.
 
